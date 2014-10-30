@@ -9,8 +9,9 @@ main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "Data.OBDD.Reduced"
-  [ testCase "Dummy" $ True @?= True
-  , testProperty "Dummy" $ \x -> let _ = x :: Bool in True
+  [ testProperty "Dummy" $ \x -> let _ = x :: Bool in True
+  , testCase "1" $ (impl (var 1) (var 2))
+      @?= Branch (Var 1) (Leaf True) (Branch (Var 2) (Leaf False) (Leaf True))
   -- Adapted from http://www.cs.otago.ac.nz/staffpriv/ok/COSC410/robdd.hs
   , testCase "O'Keefe 2" $ (or (var 1) (var 1)) @?= var 1
   , testCase "O'Keefe 3" $ (iff (impl (var 1) (var 2)) (or (not (var 1)) (var 2))) @?= true
@@ -115,3 +116,8 @@ tests = testGroup "Data.OBDD.Reduced"
   , testCase "Pengelly 19" $ (impl (var 1) (impl (var 2) (var 1))) @?= true
   ]
 
+true :: ROBDD
+true = constant True
+
+false :: ROBDD
+false = constant False

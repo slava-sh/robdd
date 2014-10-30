@@ -25,7 +25,6 @@ test-suite Tests
   hs-source-dirs:       tests, src
   type:                 exitcode-stdio-1.0
   default-language:     Haskell2010
-  ghc-options:          -Wall
   build-depends:        base
                       , tasty >= 0.10
                       , tasty-quickcheck >= 0.8
