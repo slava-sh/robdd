@@ -89,23 +89,29 @@ isTautology = (== (const True))
 isContradiction :: OBDD -> Bool
 isContradiction = (== (const False))
 
-evaluate :: Binding -> OBDD -> Bool
-evaluate env = go
+fold :: (Var -> a -> a -> a) -> a -> a -> OBDD -> a
+fold f z0 z1 = go
   where
-    go (Leaf x) = x
-    go (Branch i lo hi) = case Map.lookup i env of
-      Just False -> go lo
-      Just True  -> go hi
+    go (Leaf False)     = z0
+    go (Leaf True)      = z1
+    go (Branch i lo hi) = f i (go lo) (go hi)
+
+evaluate :: Binding -> OBDD -> Bool
+evaluate env = fold f False True
+  where
+    f i lo hi = case Map.lookup i env of
+      Just False -> lo
+      Just True  -> hi
       Nothing    -> error "evaluate: incorrect binding"
 
 anySat :: OBDD -> Maybe Binding
-anySat (Leaf False)     = Nothing
-anySat (Leaf True)      = Just Map.empty
-anySat (Branch i lo hi) = Map.insert i False <$> anySat lo
-                      <|> Map.insert i True  <$> anySat hi
+anySat = fold f Nothing (Just Map.empty)
+  where
+    f i lo hi = Map.insert i False <$> lo
+            <|> Map.insert i True  <$> hi
 
 allSat :: OBDD -> [Binding]
-allSat (Leaf False)     = []
-allSat (Leaf True)      = [Map.empty]
-allSat (Branch i lo hi) = map (Map.insert i False) (allSat lo)
-                       ++ map (Map.insert i True)  (allSat hi)
+allSat = fold f [] [Map.empty]
+  where
+    f i lo hi = map (Map.insert i False) lo
+             ++ map (Map.insert i True)  hi
