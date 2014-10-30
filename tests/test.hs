@@ -4,13 +4,13 @@ import Test.Tasty.HUnit
 import Prelude hiding (not, and, or)
 
 import Data.OBDD.Reduced
+import qualified Data.Map as Map
 
 main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "Data.OBDD.Reduced"
-  [ testProperty "Dummy" $ \x -> let _ = x :: Bool in True
-  , testCase "1" $ (impl (var 1) (var 2))
+  [ testCase "1" $ (impl (var 1) (var 2))
       @?= Branch (Var 1) (Leaf True) (Branch (Var 2) (Leaf False) (Leaf True))
   -- Adapted from http://www.cs.otago.ac.nz/staffpriv/ok/COSC410/robdd.hs
   , testCase "O'Keefe 2" $ (or (var 1) (var 1)) @?= var 1
@@ -114,6 +114,10 @@ tests = testGroup "Data.OBDD.Reduced"
             (or (or (var 1) (var 2)) (var 3))) (or (var 1) (not (var 2))))
             (not (var 1))) @?= false
   , testCase "Pengelly 19" $ (impl (var 1) (impl (var 2) (var 1))) @?= true
+  , testCase "anySat of a tautology"    $ anySat true  @?= Just Map.empty
+  , testCase "allSat of a tautology"    $ allSat true  @?= [Map.empty]
+  , testCase "anySat of a contradicion" $ anySat false @?= Nothing
+  , testCase "allSat of a contradicion" $ allSat false @?= []
   ]
 
 true :: ROBDD

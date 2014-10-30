@@ -19,6 +19,7 @@ library
   default-language:     Haskell2010
   ghc-options:          -Wall
   build-depends:        base >= 4 && < 5
+                      , containers
 
 test-suite Tests
   main-is:              test.hs
@@ -26,6 +27,7 @@ test-suite Tests
   type:                 exitcode-stdio-1.0
   default-language:     Haskell2010
   build-depends:        base
+                      , containers
                       , tasty >= 0.10
                       , tasty-quickcheck >= 0.8
                       , tasty-hunit >= 0.9
