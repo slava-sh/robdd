@@ -1,32 +1,32 @@
-Name:                   robdd
-Version:                0.0.0
-Author:                 Slava Shklyaev <shk.slava@gmail.com>
-Maintainer:             Slava Shklyaev <shk.slava@gmail.com>
-License:                BSD3
-License-File:           LICENSE
--- Synopsis:               
--- Description:            
-Cabal-Version:          >= 1.10
-Build-Type:             Simple
+name:                   robdd
+-- synopsis:               
+-- description:            
+version:                0.0.0
+author:                 Slava Shklyaev <shk.slava@gmail.com>
+maintainer:             Slava Shklyaev <shk.slava@gmail.com>
+license:                BSD3
+license-file:           LICENSE
+build-type:             Simple
+cabal-version:          >= 1.10
 
-Library
-  Default-Language:     Haskell2010
-  HS-Source-Dirs:       src
-  GHC-Options:          -Wall
-  Exposed-Modules:      Data.OBDD.Reduced
-  Other-Modules:        Data.OBDD.Reduced.Internal
-  Build-Depends:        base >= 4 && < 5
+source-repository head
+  type:                 git
+--  location:             
 
-Test-Suite spec
-  Type:                 exitcode-stdio-1.0
-  Default-Language:     Haskell2010
-  Hs-Source-Dirs:       src
-                      , test
-  Ghc-Options:          -Wall
-  Main-Is:              Spec.hs
-  Build-Depends:        base
-                      , hspec
+library
+  exposed-modules:      Data.OBDD.Reduced
+  hs-source-dirs:       src
+  default-language:     Haskell2010
+  ghc-options:          -Wall
+  build-depends:        base >= 4 && < 5
 
-Source-Repository head
-  Type:                 git
---  Location:             
+test-suite Tests
+  main-is:              test.hs
+  hs-source-dirs:       tests, src
+  type:                 exitcode-stdio-1.0
+  default-language:     Haskell2010
+  ghc-options:          -Wall
+  build-depends:        base
+                      , tasty >= 0.10
+                      , tasty-quickcheck >= 0.8
+                      , tasty-hunit >= 0.9
