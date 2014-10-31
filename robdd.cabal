@@ -1,5 +1,5 @@
 name:                   obdd
--- synopsis:               
+synopsis:               Ordered Binary Decision Diagrams
 -- description:            
 version:                0.0.0
 author:                 Slava Shklyaev <shk.slava@gmail.com>
@@ -11,7 +11,7 @@ cabal-version:          >= 1.10
 
 source-repository head
   type:                 git
---  location:             
+  location:             git@github.com:slava-sh/obdd.git
 
 library
   exposed-modules:      Data.OBDD
