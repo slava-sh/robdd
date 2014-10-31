@@ -1,5 +1,5 @@
-module Data.OBDD.Reduced
-  ( ROBDD(..)
+module Data.OBDD
+  ( OBDD(..)
   , Var(..)
   , Binding
   , constant
@@ -30,19 +30,19 @@ newtype Var = Var Int
 
 type Binding = Binding.Map Var Bool
 
-data ROBDD
-  = Branch Var ROBDD ROBDD
+data OBDD
+  = Branch Var OBDD OBDD
   | Leaf Bool
   deriving Eq
 
-instance Show ROBDD where
+instance Show OBDD where
     show (Leaf True)            = "T"
     show (Leaf False)           = "F"
     show (Branch (Var i) lo hi) = "Branch " ++ show i
                                     ++ " (" ++ show lo ++ ")"
                                     ++ " (" ++ show hi ++ ")"
 
-apply :: (Bool -> Bool -> Bool) -> ROBDD -> ROBDD -> ROBDD
+apply :: (Bool -> Bool -> Bool) -> OBDD -> OBDD -> OBDD
 apply f = go
   where
     go x@(Branch xi xlo xhi) y@(Branch yi ylo yhi)
@@ -53,36 +53,36 @@ apply f = go
     go (Branch xi xlo xhi) y = reduce xi (go xlo y)   (go xhi y)
     go (Leaf x) (Leaf y)   = Leaf $ f x y
 
-reduce :: Var -> ROBDD -> ROBDD -> ROBDD
+reduce :: Var -> OBDD -> OBDD -> OBDD
 reduce i lo hi
   | lo == hi  = lo
   | otherwise = Branch i lo hi
 
-constant :: Bool -> ROBDD
+constant :: Bool -> OBDD
 constant = Leaf
 
-var :: Int -> ROBDD
+var :: Int -> OBDD
 var x = Branch (Var x) (Leaf False) (Leaf True)
 
-not :: ROBDD -> ROBDD
+not :: OBDD -> OBDD
 not = xor (constant True)
 
-and :: ROBDD -> ROBDD -> ROBDD
+and :: OBDD -> OBDD -> OBDD
 and = apply (&&)
 
-or :: ROBDD -> ROBDD -> ROBDD
+or :: OBDD -> OBDD -> OBDD
 or = apply (||)
 
-xor :: ROBDD -> ROBDD -> ROBDD
+xor :: OBDD -> OBDD -> OBDD
 xor = apply (/=)
 
-iff :: ROBDD -> ROBDD -> ROBDD
+iff :: OBDD -> OBDD -> OBDD
 iff = apply (==)
 
-impl :: ROBDD -> ROBDD -> ROBDD
+impl :: OBDD -> OBDD -> OBDD
 impl = apply (\x y -> Prelude.not x || y)
 
-restrict :: Var -> Bool -> ROBDD -> ROBDD
+restrict :: Var -> Bool -> OBDD -> OBDD
 restrict i v = go
   where
     go x@(Branch xi lo hi)
@@ -91,19 +91,19 @@ restrict i v = go
       | otherwise = if v then hi else lo
     go x = x
 
-exists :: Var -> ROBDD -> Bool
+exists :: Var -> OBDD -> Bool
 exists i x = isTautology $ restrict i True x `or` restrict i False x
 
-forall :: Var -> ROBDD -> Bool
+forall :: Var -> OBDD -> Bool
 forall i x = isTautology $ restrict i True x `and` restrict i False x
 
-isTautology :: ROBDD -> Bool
+isTautology :: OBDD -> Bool
 isTautology = (== (constant True))
 
-isContradiction :: ROBDD -> Bool
+isContradiction :: OBDD -> Bool
 isContradiction = (== (constant False))
 
-evaluate :: Binding -> ROBDD -> Bool
+evaluate :: Binding -> OBDD -> Bool
 evaluate env = go
   where
     go (Leaf x) = x
@@ -112,13 +112,13 @@ evaluate env = go
       Just True  -> go hi
       Nothing    -> error "evaluate: incorrect binding"
 
-anySat :: ROBDD -> Maybe Binding
+anySat :: OBDD -> Maybe Binding
 anySat (Leaf False)     = Nothing
 anySat (Leaf True)      = Just Binding.empty
 anySat (Branch i lo hi) = Binding.insert i False <$> anySat lo
                       <|> Binding.insert i True  <$> anySat hi
 
-allSat :: ROBDD -> [Binding]
+allSat :: OBDD -> [Binding]
 allSat (Leaf False)     = []
 allSat (Leaf True)      = [Binding.empty]
 allSat (Branch i lo hi) = map (Binding.insert i False) (allSat lo)

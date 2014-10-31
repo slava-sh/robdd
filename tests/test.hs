@@ -1,9 +1,8 @@
 import Test.Tasty
-import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
 import Prelude hiding (not, and, or)
 
-import Data.OBDD.Reduced
+import Data.OBDD
 import qualified Data.Map as Map
 
 main = defaultMain tests
@@ -120,8 +119,8 @@ tests = testGroup "Data.OBDD.Reduced"
   , testCase "allSat of a contradicion" $ allSat false @?= []
   ]
 
-true :: ROBDD
+true :: OBDD
 true = constant True
 
-false :: ROBDD
+false :: OBDD
 false = constant False
