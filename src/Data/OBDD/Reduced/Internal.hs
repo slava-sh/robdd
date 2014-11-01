@@ -3,12 +3,12 @@
 {-# LANGUAGE Rank2Types #-}
 module Data.OBDD.Reduced.Internal where
 
-import Prelude hiding (not, and, or, const)
-import qualified Prelude
 import Data.Map (Map, (!))
 import qualified Data.Map as Map
 import Control.Applicative
 import Control.Monad.State
+
+import Data.OBDD.Reduced.Internal.Expr (Expr(..))
 
 newtype Var = Var Int
   deriving (Eq, Ord, Show)
@@ -67,7 +67,10 @@ apply f a b = evalStateT (go a b) Map.empty
     go (Branch _ _ xv xlo xhi) y = branchM xv (go xlo y)   (go xhi y)
     go (Leaf x) (Leaf y)         = return . Leaf $ f x y
 
-branchM :: Var -> RefPoolM p (Robdd p) -> RefPoolM p (Robdd p) -> RefPoolM p (Robdd p)
+branchM :: Var
+        -> RefPoolM p (Robdd p)
+        -> RefPoolM p (Robdd p)
+        -> RefPoolM p (Robdd p)
 branchM v loM hiM = do
   lo <- loM
   hi <- hiM
@@ -110,11 +113,8 @@ branch v lo hi
       modify $ Map.insert i refBranch
       return origBranch
 
-const :: Bool -> Robdd p
-const = Leaf
-
 notM :: Robdd p -> RobddM p (Robdd p)
-notM = (`xorM` (const True))
+notM = (`xorM` (Leaf True))
 
 andM :: Robdd p -> Robdd p -> RobddM p (Robdd p)
 andM = apply (&&)
@@ -129,61 +129,7 @@ iffM :: Robdd p -> Robdd p -> RobddM p (Robdd p)
 iffM = apply (==)
 
 implM :: Robdd p -> Robdd p -> RobddM p (Robdd p)
-implM = apply (\x y -> Prelude.not x || y)
-
-data Expr
-  = EConst Bool
-  | EVar   Int
-  | ENot   Expr
-  | EAnd   Expr Expr
-  | EOr    Expr Expr
-  | EXor   Expr Expr
-  | EIff   Expr Expr
-  | EImpl  Expr Expr
-  deriving (Eq, Show)
-
-true :: Expr
-true = EConst True
-
-false :: Expr
-false = EConst False
-
-var :: Int -> Expr
-var = EVar
-
-not :: Expr -> Expr
-not = ENot
-
-and :: Expr -> Expr -> Expr
-and = EAnd
-
-or :: Expr -> Expr -> Expr
-or = EOr
-
-xor :: Expr -> Expr -> Expr
-xor = EXor
-
-iff :: Expr -> Expr -> Expr
-iff = EIff
-
-impl :: Expr -> Expr -> Expr
-impl = EImpl
-
-reduce :: Expr -> RobddM p (Robdd p)
-reduce (EConst x)   = return $ const x
-reduce (EVar   x)   = varM x
-reduce (ENot   x)   = reduce x >>= notM
-reduce (EAnd   x y) = binary andM  x y
-reduce (EOr    x y) = binary orM   x y
-reduce (EXor   x y) = binary xorM  x y
-reduce (EIff   x y) = binary iffM  x y
-reduce (EImpl  x y) = binary implM x y
-
-binary :: (Robdd p -> Robdd p -> RobddM p (Robdd p)) -> Expr -> Expr -> RobddM p (Robdd p)
-binary f x y = do
-  x' <- reduce x
-  y' <- reduce y
-  f x' y'
+implM = apply (\x y -> not x || y)
 
 exists :: Var -> Robdd p -> RobddM p Bool
 exists v x = isTautology <$> do
@@ -201,10 +147,10 @@ equals :: Robdd p -> Robdd p -> Bool
 equals x y = getId x == getId y
 
 isTautology :: Robdd p -> Bool
-isTautology = (`equals` (const True))
+isTautology = (`equals` (Leaf True))
 
 isContradiction :: Robdd p -> Bool
-isContradiction = (`equals` (const False))
+isContradiction = (`equals` (Leaf False))
 
 fold :: forall a p. (Var -> a -> a -> a) -> a -> a -> Robdd p -> a
 fold f z0 z1 robdd = evalState (go robdd) Map.empty
@@ -239,3 +185,22 @@ allSat = fold f [] [Map.empty]
   where
     f i lo hi = map (Map.insert i False) lo
              ++ map (Map.insert i True)  hi
+
+reduce :: Expr -> RobddM p (Robdd p)
+reduce (EConst x)   = return $ Leaf x
+reduce (EVar   x)   = varM x
+reduce (ENot   x)   = reduce x >>= notM
+reduce (EAnd   x y) = binary andM  x y
+reduce (EOr    x y) = binary orM   x y
+reduce (EXor   x y) = binary xorM  x y
+reduce (EIff   x y) = binary iffM  x y
+reduce (EImpl  x y) = binary implM x y
+
+binary :: (Robdd p -> Robdd p -> RobddM p (Robdd p))
+       -> Expr
+       -> Expr
+       -> RobddM p (Robdd p)
+binary f x y = do
+  x' <- reduce x
+  y' <- reduce y
+  f x' y'

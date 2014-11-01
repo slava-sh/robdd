@@ -3,6 +3,7 @@ import Test.Tasty.HUnit
 import Prelude hiding (not, and, or, const)
 
 import Data.OBDD.Reduced
+import Data.OBDD.Reduced.Expr
 import qualified Data.OBDD.Reduced.Internal as I
 import qualified Data.Map as Map
 
@@ -10,9 +11,6 @@ main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "Data.OBDD.Reduced"
-  --[ testCase "1" $ (impl (var 1) (var 2))
-  --    @?= I.Branch (I.Var 1) (I.Leaf True)
-  --          (I.Branch (I.Var 2) (I.Leaf False) (I.Leaf True))
   -- Adapted from http://www.cs.otago.ac.nz/staffpriv/ok/COSC410/Robdd.hs
   [ testRobdd "O'Keefe 2" (or (var 1) (var 1)) (var 1)
   , testRobdd "O'Keefe 3" (iff (impl (var 1) (var 2)) (or (not (var 1)) (var 2))) true
@@ -62,10 +60,10 @@ tests = testGroup "Data.OBDD.Reduced"
            (not (var 1)))
       false
   , testRobdd "Pengelly 19" (impl (var 1) (impl (var 2) (var 1))) true
-  , testCase "anySat of a tautology"    $ anySat (const True)  @?= Just Map.empty
-  , testCase "allSat of a tautology"    $ allSat (const True)  @?= [Map.empty]
-  , testCase "anySat of a contradicion" $ anySat (const False) @?= Nothing
-  , testCase "allSat of a contradicion" $ allSat (const False) @?= []
+  , testCase "anySat of a tautology"    $ anySat (I.Leaf True)  @?= Just Map.empty
+  , testCase "allSat of a tautology"    $ allSat (I.Leaf True)  @?= [Map.empty]
+  , testCase "anySat of a contradicion" $ anySat (I.Leaf False) @?= Nothing
+  , testCase "allSat of a contradicion" $ allSat (I.Leaf False) @?= []
   ]
 
 testRobdd s x y = testCase s $ runRobddM $ do
