@@ -18,7 +18,6 @@ module Data.OBDD.Reduced
   , binary
   , exists
   , forall
-  , equals
   , isTautology
   , isContradiction
   , fold

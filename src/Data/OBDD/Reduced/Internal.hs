@@ -34,7 +34,9 @@ data BranchType = Orig | Ref
 data Robdd p
   = Branch BranchType (Id p) Var (Robdd p) (Robdd p)
   | Leaf Bool
-  deriving Eq
+
+instance Eq (Robdd p) where
+  x == y = getId x == getId y
 
 getId :: Robdd p -> Id p
 getId (Branch _ i _ _ _) = i
@@ -97,8 +99,8 @@ nextId = do
 
 branch :: Var -> Robdd p -> Robdd p -> RefPoolM p (Robdd p)
 branch v lo hi
-  | lo `equals` hi = return lo
-  | otherwise      = do
+  | lo == hi  = return lo
+  | otherwise = do
       idPool <- lift get
       case Map.lookup key idPool of
         Just i  -> get >>= maybe (newBranch i) return . Map.lookup i
@@ -143,14 +145,11 @@ forall v x = isTautology <$> do
   xF <- restrict v False x
   andM xT xF
 
-equals :: Robdd p -> Robdd p -> Bool
-equals x y = getId x == getId y
-
 isTautology :: Robdd p -> Bool
-isTautology = (`equals` (Leaf True))
+isTautology = (== (Leaf True))
 
 isContradiction :: Robdd p -> Bool
-isContradiction = (`equals` (Leaf False))
+isContradiction = (== (Leaf False))
 
 fold :: forall a p. (Var -> a -> a -> a) -> a -> a -> Robdd p -> a
 fold f z0 z1 robdd = evalState (go robdd) Map.empty
