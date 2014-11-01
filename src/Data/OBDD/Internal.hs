@@ -1,9 +1,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Data.OBDD.Internal where
 
 import Prelude hiding (not, and, or, const)
 import qualified Prelude
-import Data.Map (Map)
+import Data.Map (Map, (!))
 import qualified Data.Map as Map
 import Control.Applicative
 import Control.Monad.State
@@ -196,12 +197,17 @@ isTautology = (`equals` (const True))
 isContradiction :: ROBDD -> Bool
 isContradiction = (`equals` (const False))
 
-fold :: (Var -> a -> a -> a) -> a -> a -> ROBDD -> a
-fold f z0 z1 = undefined
+fold :: forall a. (Var -> a -> a -> a) -> a -> a -> ROBDD -> a
+fold f z0 z1 robdd = evalState (go robdd) Map.empty
   where
-    go (Leaf False)     = z0
-    go (Leaf True)      = z1
-    go (Branch _ _ i lo hi) = f i (go lo) (go hi)
+    go :: ROBDD -> State (Map Id a) a
+    go (Leaf False)            = return z0
+    go (Leaf True)             = return z1
+    go (Branch Ref i _ _ _)    = get >>= return . (! i)
+    go (Branch Orig i v lo hi) = do
+      result <- f v <$> go lo <*> go hi
+      modify $ Map.insert i result
+      return result
 
 evaluate :: Binding -> ROBDD -> Bool
 evaluate env = fold f False True
