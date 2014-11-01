@@ -1,3 +1,3 @@
-# Ordered Binary Decision Diagrams
+# Reduced Ordered Binary Decision Diagrams
 
-No redundant variables but no sharing.
+Inspired by [“A purely functional implementation of ROBDDs in Haskell.”](http://www-ps.informatik.uni-kiel.de/~fhu/PUBLICATIONS/2006/tfp06.pdf) by Jan Christiansen and Frank Huch.
