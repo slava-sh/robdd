@@ -19,14 +19,14 @@ newtype Id p = Id Int
 
 type IdPool p = Map (Var, Id p, Id p) (Id p)
 
-newtype IdPoolM p a = IdPoolM (State (IdPool p) a)
+newtype ROBDDM p a = ROBDDM (State (IdPool p) a)
   deriving (Functor, Applicative, Monad, MonadState (IdPool p))
 
-runIdPoolM :: forall a. (forall p. IdPoolM p a) -> a
-runIdPoolM (IdPoolM s) = evalState s Map.empty
+runROBDDM :: forall a. (forall p. ROBDDM p a) -> a
+runROBDDM (ROBDDM s) = evalState s Map.empty
 
 type RefPool p = Map (Id p) (ROBDD p)
-type RefPoolM p a = StateT (RefPool p) (IdPoolM p) a
+type RefPoolM p a = StateT (RefPool p) (ROBDDM p) a
 
 data BranchType = Orig | Ref
   deriving (Eq, Ord, Show)
@@ -52,10 +52,10 @@ instance Show (ROBDD p) where
       showType Orig = "Branch"
       showType Ref  = "Ref"
 
-varM :: Int -> IdPoolM p (ROBDD p)
+varM :: Int -> ROBDDM p (ROBDD p)
 varM x = evalStateT (branch (Var x) (Leaf False) (Leaf True)) Map.empty
 
-apply :: (Bool -> Bool -> Bool) -> ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)
+apply :: (Bool -> Bool -> Bool) -> ROBDD p -> ROBDD p -> ROBDDM p (ROBDD p)
 apply f a b = evalStateT (go a b) Map.empty
   where
     go :: ROBDD p -> ROBDD p -> RefPoolM p (ROBDD p)
@@ -73,7 +73,7 @@ branchM v loM hiM = do
   hi <- hiM
   branch v lo hi
 
-restrict :: Var -> Bool -> ROBDD p -> IdPoolM p (ROBDD p)
+restrict :: Var -> Bool -> ROBDD p -> ROBDDM p (ROBDD p)
 restrict variable value robdd = evalStateT (go robdd) Map.empty
   where
     go (Branch _ _ v lo hi)
@@ -87,7 +87,7 @@ rebuild :: ROBDD p -> RefPoolM p (ROBDD p)
 rebuild (Branch _ _ v lo hi) = branch v lo hi
 rebuild x                    = return x
 
-nextId :: IdPoolM p (Id p)
+nextId :: ROBDDM p (Id p)
 nextId = do
   pool <- get
   return . Id $ 2 + Map.size pool
@@ -113,22 +113,22 @@ branch v lo hi
 const :: Bool -> ROBDD p
 const = Leaf
 
-notM :: ROBDD p -> IdPoolM p (ROBDD p)
+notM :: ROBDD p -> ROBDDM p (ROBDD p)
 notM = (`xorM` (const True))
 
-andM :: ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)
+andM :: ROBDD p -> ROBDD p -> ROBDDM p (ROBDD p)
 andM = apply (&&)
 
-orM :: ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)
+orM :: ROBDD p -> ROBDD p -> ROBDDM p (ROBDD p)
 orM = apply (||)
 
-xorM :: ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)
+xorM :: ROBDD p -> ROBDD p -> ROBDDM p (ROBDD p)
 xorM = apply (/=)
 
-iffM :: ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)
+iffM :: ROBDD p -> ROBDD p -> ROBDDM p (ROBDD p)
 iffM = apply (==)
 
-implM :: ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)
+implM :: ROBDD p -> ROBDD p -> ROBDDM p (ROBDD p)
 implM = apply (\x y -> Prelude.not x || y)
 
 data Expr
@@ -169,7 +169,7 @@ iff = EIff
 impl :: Expr -> Expr -> Expr
 impl = EImpl
 
-reduce :: Expr -> IdPoolM p (ROBDD p)
+reduce :: Expr -> ROBDDM p (ROBDD p)
 reduce (EConst x)   = return $ const x
 reduce (EVar   x)   = varM x
 reduce (ENot   x)   = reduce x >>= notM
@@ -179,19 +179,19 @@ reduce (EXor   x y) = binary xorM  x y
 reduce (EIff   x y) = binary iffM  x y
 reduce (EImpl  x y) = binary implM x y
 
-binary :: (ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)) -> Expr -> Expr -> IdPoolM p (ROBDD p)
+binary :: (ROBDD p -> ROBDD p -> ROBDDM p (ROBDD p)) -> Expr -> Expr -> ROBDDM p (ROBDD p)
 binary f x y = do
   x' <- reduce x
   y' <- reduce y
   f x' y'
 
-exists :: Var -> ROBDD p -> IdPoolM p Bool
+exists :: Var -> ROBDD p -> ROBDDM p Bool
 exists v x = isTautology <$> do
   xT <- restrict v True  x
   xF <- restrict v False x
   orM xT xF
 
-forall :: Var -> ROBDD p -> IdPoolM p Bool
+forall :: Var -> ROBDD p -> ROBDDM p Bool
 forall v x = isTautology <$> do
   xT <- restrict v True  x
   xF <- restrict v False x
