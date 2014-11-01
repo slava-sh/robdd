@@ -66,17 +66,32 @@ apply f a b = evalStateT (go a b) Map.empty
   where
     go :: ROBDD -> ROBDD -> RefPoolM ROBDD
     go x@(Branch _ _ xv xlo xhi) y@(Branch _ _ yv ylo yhi)
-      | xv < yv                  = branch' xv (go xlo y)   (go xhi y)
-      | yv < xv                  = branch' yv (go x   ylo) (go x   yhi)
-      | otherwise                = branch' xv (go xlo ylo) (go xhi yhi)
-    go x (Branch _ _ yv ylo yhi) = branch' yv (go x   ylo) (go x   yhi)
-    go (Branch _ _ xv xlo xhi) y = branch' xv (go xlo y)   (go xhi y)
+      | xv < yv                  = branchM xv (go xlo y)   (go xhi y)
+      | yv < xv                  = branchM yv (go x   ylo) (go x   yhi)
+      | otherwise                = branchM xv (go xlo ylo) (go xhi yhi)
+    go x (Branch _ _ yv ylo yhi) = branchM yv (go x   ylo) (go x   yhi)
+    go (Branch _ _ xv xlo xhi) y = branchM xv (go xlo y)   (go xhi y)
     go (Leaf x) (Leaf y)         = return . Leaf $ f x y
 
-    branch' v loM hiM = do
-      lo <- loM
-      hi <- hiM
-      branch v lo hi
+branchM :: Var -> RefPoolM ROBDD -> RefPoolM ROBDD -> RefPoolM ROBDD
+branchM v loM hiM = do
+  lo <- loM
+  hi <- hiM
+  branch v lo hi
+
+restrict :: Var -> Bool -> ROBDD -> IdPoolM ROBDD
+restrict variable value robdd = evalStateT (go robdd) Map.empty
+  where
+    go (Branch _ _ v lo hi)
+      | v < variable = branchM v (go lo) (go hi)
+      | v > variable = branchM v (rebuild lo) (rebuild hi)
+      | value        = rebuild hi
+      | otherwise    = rebuild lo
+    go x = return x
+
+rebuild :: ROBDD -> RefPoolM ROBDD
+rebuild (Branch _ _ v lo hi) = branch v lo hi
+rebuild x                    = return x
 
 nextId :: IdPoolM Id
 nextId = do
@@ -172,15 +187,6 @@ binary f x y = do
   x' <- reduce x
   y' <- reduce y
   f x' y'
-
-restrict :: Var -> Bool -> ROBDD -> IdPoolM ROBDD
-restrict i v = undefined
-  where
-    -- go x@(Branch _ xi lo hi)
-    --   | xi < i    = branch xi (go lo) (go hi)
-    --   | xi > i    = x
-    --   | otherwise = if v then hi else lo
-    -- go x = x
 
 -- exists :: Var -> ROBDD -> IdPoolM Bool
 -- exists i x = isTautology $ restrict i True x `or` restrict i False x
