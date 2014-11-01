@@ -2,8 +2,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Prelude hiding (not, and, or, const)
 
-import Data.OBDD
-import qualified Data.OBDD.Internal as I
+import Data.OBDD.Reduced
+import qualified Data.OBDD.Reduced.Internal as I
 import qualified Data.Map as Map
 
 main = defaultMain tests

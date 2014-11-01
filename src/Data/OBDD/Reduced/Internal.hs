@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
-module Data.OBDD.Internal where
+module Data.OBDD.Reduced.Internal where
 
 import Prelude hiding (not, and, or, const)
 import qualified Prelude
@@ -10,11 +10,12 @@ import qualified Data.Map as Map
 import Control.Applicative
 import Control.Monad.State
 
-newtype Id p = Id Int
-  deriving (Eq, Ord)
-
 newtype Var = Var Int
   deriving (Eq, Ord, Show)
+
+-- The p parameter ensures that we always deal with 'Id's from the same pool
+newtype Id p = Id Int
+  deriving (Eq, Ord)
 
 type IdPool p = Map (Var, Id p, Id p) (Id p)
 
@@ -25,10 +26,7 @@ runIdPoolM :: forall a. (forall p. IdPoolM p a) -> a
 runIdPoolM (IdPoolM s) = evalState s Map.empty
 
 type RefPool p = Map (Id p) (ROBDD p)
-
 type RefPoolM p a = StateT (RefPool p) (IdPoolM p) a
-
-type Binding = Map Var Bool
 
 data BranchType = Orig | Ref
   deriving (Eq, Ord, Show)
@@ -43,21 +41,16 @@ getId (Branch _ i _ _ _) = i
 getId (Leaf False)       = Id 0
 getId (Leaf True)        = Id 1
 
-instance Show (Id p) where
-  show (Id i) = "#" ++ show i
-
 instance Show (ROBDD p) where
-  show (Branch t i (Var v) lo hi) = showType t ++ show i ++ " " ++ show v
-                                     ++ " (" ++ show lo ++ ")"
-                                     ++ " (" ++ show hi ++ ")"
+  show (Leaf False)                    = "F"
+  show (Leaf True)                     = "T"
+  show (Branch t (Id i) (Var v) lo hi) = showType t ++ "#" ++ show i ++ " "
+                                      ++ show v
+                                      ++ " (" ++ show lo ++ ")"
+                                      ++ " (" ++ show hi ++ ")"
     where
       showType Orig = "Branch"
       showType Ref  = "Ref"
-  show (Leaf True)                = "T"
-  show (Leaf False)               = "F"
-
-const :: Bool -> ROBDD p
-const = Leaf
 
 varM :: Int -> IdPoolM p (ROBDD p)
 varM x = evalStateT (branch (Var x) (Leaf False) (Leaf True)) Map.empty
@@ -117,8 +110,11 @@ branch v lo hi
       modify $ Map.insert i refBranch
       return origBranch
 
+const :: Bool -> ROBDD p
+const = Leaf
+
 notM :: ROBDD p -> IdPoolM p (ROBDD p)
-notM = xorM (const True)
+notM = (`xorM` (const True))
 
 andM :: ROBDD p -> ROBDD p -> IdPoolM p (ROBDD p)
 andM = apply (&&)
@@ -221,6 +217,8 @@ fold f z0 z1 robdd = evalState (go robdd) Map.empty
       result <- f v <$> go lo <*> go hi
       modify $ Map.insert i result
       return result
+
+type Binding = Map Var Bool
 
 evaluate :: Binding -> ROBDD p -> Bool
 evaluate env = fold f False True
