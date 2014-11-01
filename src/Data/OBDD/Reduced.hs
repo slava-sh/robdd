@@ -1,13 +1,12 @@
 module Data.OBDD.Reduced
-  ( module Data.OBDD.Reduced.Internal
-  , Var
+  ( Var
   , Robdd
   , RobddM
   , Binding
   , runRobddM
-  , varM
   , apply
   , restrict
+  , varM
   , constM
   , notM
   , andM
@@ -15,8 +14,6 @@ module Data.OBDD.Reduced
   , xorM
   , iffM
   , implM
-  , reduce
-  , binary
   , exists
   , forall
   , isTautology
