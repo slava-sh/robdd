@@ -8,6 +8,7 @@ module Data.OBDD.Reduced
   , varM
   , apply
   , restrict
+  , constM
   , notM
   , andM
   , orM

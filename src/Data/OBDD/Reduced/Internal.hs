@@ -115,6 +115,9 @@ branch v lo hi
       modify $ Map.insert i refBranch
       return origBranch
 
+constM :: Bool -> RobddM p (Robdd p)
+constM = return . Leaf
+
 notM :: Robdd p -> RobddM p (Robdd p)
 notM = (`xorM` (Leaf True))
 
