@@ -188,11 +188,17 @@ binary f x y = do
   y' <- reduce y
   f x' y'
 
--- exists :: Var -> ROBDD -> IdPoolM Bool
--- exists i x = isTautology $ restrict i True x `or` restrict i False x
--- 
--- forall :: Var -> ROBDD -> IdPoolM Bool
--- forall i x = isTautology $ restrict i True x `and` restrict i False x
+exists :: Var -> ROBDD -> IdPoolM Bool
+exists v x = isTautology <$> do
+  xT <- restrict v True  x
+  xF <- restrict v False x
+  orM xT xF
+
+forall :: Var -> ROBDD -> IdPoolM Bool
+forall v x = isTautology <$> do
+  xT <- restrict v True  x
+  xF <- restrict v False x
+  andM xT xF
 
 equals :: ROBDD -> ROBDD -> Bool
 equals x y = getId x == getId y
