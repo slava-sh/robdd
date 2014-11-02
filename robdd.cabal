@@ -13,9 +13,15 @@ source-repository head
   type:                 git
   location:             git@github.com:slava-sh/robdd.git
 
+flag graphviz
+  description:          Include Data.ROBDD.GraphViz
+  default:              True
+
 library
   exposed-modules:      Data.ROBDD
                       , Data.ROBDD.Expr
+  if flag(graphviz)
+    exposed-modules:    Data.ROBDD.GraphViz
   other-modules:        Data.ROBDD.Internal
                       , Data.ROBDD.Internal.Expr
   hs-source-dirs:       src
@@ -24,6 +30,8 @@ library
   build-depends:        base >= 4 && < 5
                       , containers
                       , mtl
+  if flag(graphviz)
+    build-depends:      dotgen >= 0.4
 
 test-suite Tests
   main-is:              test.hs

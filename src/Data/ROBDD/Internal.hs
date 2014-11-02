@@ -86,7 +86,7 @@ restrict variable value robdd = evalStateT (go robdd) Map.empty
       | v > variable = branchM v (rebuild lo) (rebuild hi)
       | value        = rebuild hi
       | otherwise    = rebuild lo
-    go x = return x
+    go x             = return x
 
 rebuild :: Robdd p -> RefPoolM p (Robdd p)
 rebuild (Branch _ _ v lo hi) = branch v lo hi
