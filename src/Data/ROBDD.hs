@@ -1,4 +1,4 @@
-module Data.OBDD.Reduced
+module Data.ROBDD
   ( Var
   , Robdd
   , RobddM
@@ -25,5 +25,4 @@ module Data.OBDD.Reduced
   , reduce
   ) where
 
-import Prelude ()
-import Data.OBDD.Reduced.Internal
+import Data.ROBDD.Internal

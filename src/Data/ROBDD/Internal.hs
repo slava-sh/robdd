@@ -1,14 +1,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
-module Data.OBDD.Reduced.Internal where
+module Data.ROBDD.Internal where
 
 import Data.Map (Map, (!))
 import qualified Data.Map as Map
 import Control.Applicative
 import Control.Monad.State
 
-import Data.OBDD.Reduced.Internal.Expr (Expr(..))
+import Data.ROBDD.Internal.Expr (Expr(..))
 
 newtype Var = Var Int
   deriving (Eq, Ord, Show)
@@ -119,7 +119,7 @@ constM :: Bool -> RobddM p (Robdd p)
 constM = return . Leaf
 
 notM :: Robdd p -> RobddM p (Robdd p)
-notM = (`xorM` (Leaf True))
+notM = (`xorM` Leaf True)
 
 andM :: Robdd p -> Robdd p -> RobddM p (Robdd p)
 andM = apply (&&)
@@ -149,10 +149,10 @@ forall v x = isTautology <$> do
   andM xT xF
 
 isTautology :: Robdd p -> Bool
-isTautology = (== (Leaf True))
+isTautology = (== Leaf True)
 
 isContradiction :: Robdd p -> Bool
-isContradiction = (== (Leaf False))
+isContradiction = (== Leaf False)
 
 fold :: forall a p. (Var -> a -> a -> a) -> a -> a -> Robdd p -> a
 fold f z0 z1 robdd = evalState (go robdd) Map.empty
@@ -160,7 +160,7 @@ fold f z0 z1 robdd = evalState (go robdd) Map.empty
     go :: Robdd p -> State (Map (Id p) a) a
     go (Leaf False)            = return z0
     go (Leaf True)             = return z1
-    go (Branch Ref i _ _ _)    = get >>= return . (! i)
+    go (Branch Ref i _ _ _)    = liftM (! i) get
     go (Branch Orig i v lo hi) = do
       result <- f v <$> go lo <*> go hi
       modify $ Map.insert i result

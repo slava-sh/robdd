@@ -1,4 +1,4 @@
-module Data.OBDD.Reduced.Expr
+module Data.ROBDD.Expr
   ( Expr
   , const
   , true
@@ -13,4 +13,4 @@ module Data.OBDD.Reduced.Expr
   ) where
 
 import Prelude ()
-import Data.OBDD.Reduced.Internal.Expr
+import Data.ROBDD.Internal.Expr

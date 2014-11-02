@@ -1,4 +1,4 @@
-module Data.OBDD.Reduced.Internal.Expr where
+module Data.ROBDD.Internal.Expr where
 
 import Prelude hiding (not, and, or, const)
 

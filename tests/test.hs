@@ -2,15 +2,15 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Prelude hiding (not, and, or, const)
 
-import Data.OBDD.Reduced
-import Data.OBDD.Reduced.Expr
-import qualified Data.OBDD.Reduced.Internal as I
+import Data.ROBDD
+import Data.ROBDD.Expr
+import qualified Data.ROBDD.Internal as I
 import qualified Data.Map as Map
 
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Data.OBDD.Reduced"
+tests = testGroup "Data.ROBDD"
   -- Adapted from http://www.cs.otago.ac.nz/staffpriv/ok/COSC410/Robdd.hs
   [ testRobdd "O'Keefe 2" (or (var 1) (var 1)) (var 1)
   , testRobdd "O'Keefe 3" (iff (impl (var 1) (var 2)) (or (not (var 1)) (var 2))) true
